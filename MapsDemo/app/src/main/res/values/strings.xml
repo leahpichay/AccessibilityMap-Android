@@ -3,10 +3,9 @@
     <string name="title_activity_maps">Map</string>
 
     <string-array name="building_names">
-        <item>_______________</item>
-        <item>Kennedy Library</item>
-        <item>Campus Dining</item>
-        <item>Spanos Stadium</item>
+        <item>Cal Poly Center</item>
+        <item>20)Engineering East</item>
+        <item>35)Kennedy Library</item>
     </string-array>
 
 </resources>
