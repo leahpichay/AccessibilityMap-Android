@@ -17,6 +17,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -75,15 +77,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         dropDown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if(parent.getSelectedItemPosition() == 0) {
+                int pos = parent.getSelectedItemPosition();
+                if(pos == 0) {
                     resetMap(mMap);
                 }
-                else if(parent.getSelectedItemPosition() == 1) {
+                else if(pos == 1) {
+                    Building b = BuildingFactory.getBuilding1();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                }
+                else if(pos == 2) {
+                    Building b = BuildingFactory.getBuilding2();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                }
+                else if(pos == 3) {
+                    Building b = BuildingFactory.getBuilding14();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                }
+                else if(pos == 4) {
+                    Building b = BuildingFactory.getBuilding15();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                }
+                else if(parent.getSelectedItemPosition() == 5) {
                     removeMarkers();
                     moveToBuilding(mMap, eeBuilding);
                     addBuildingEntrances(mMap, eeBuilding);
                 }
-                else if(parent.getSelectedItemPosition() == 2) {
+                else if(parent.getSelectedItemPosition() == 6) {
                     removeMarkers();
                     moveToBuilding(mMap, klBuilding);
                     addBuildingEntrances(mMap,klBuilding);
@@ -106,20 +129,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void addBuildingEntrances(GoogleMap mMap, Building building) {
         for (Entrance entrance : building.entrances) {
-            addMarker(mMap, markerOptions.position(entrance.location));
+            addMarker(mMap, entrance);
         }
     }
 
     private void moveToBuilding(GoogleMap mMap, Building building) {
-        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(building.location, 17);
+        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(building.location, 18);
         mMap.moveCamera(update);
     }
 
-    private void addMarker(GoogleMap mMap, MarkerOptions marker) {
+    private void addMarker(GoogleMap mMap, Entrance entrance) {
         if(mapMarkers == null)
             mapMarkers = new ArrayList<Marker>();
 
-        Marker mark = mMap.addMarker(marker);
+        MarkerOptions mOptions = markerOptions.position(entrance.location);
+        Marker mark = mMap.addMarker(mOptions);
+        if (entrance.isElevator) {
+            mark.setTitle("Elevator");
+            BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.mipmap.elevator);
+            mark.setIcon(icon);
+        }
+        else {
+            mark.setTitle("Entrance");
+            BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.mipmap.blue_door);
+            mark.setIcon(icon);
+        }
         mapMarkers.add(mark);
     }
 
@@ -154,6 +188,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 public View getInfoContents(Marker marker) {
                     View v = getLayoutInflater().inflate(R.layout.marker_info, null);
                     TextView markerTitle = (TextView)findViewById(R.id.markerTitle);
+                    markerTitle.setText(marker.getTitle());
                     TextView markerText1 = (TextView)findViewById(R.id.markerText1);
                     TextView markerText2 = (TextView)findViewById(R.id.markerText2);
                     TextView markerText3 = (TextView)findViewById(R.id.markerText3);
@@ -165,7 +200,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Add a marker in Cal Poly and move the camera
         LatLng calPoly = new LatLng(35.304925, -120.662048);
-        addMarker(mMap, markerOptions.position(calPoly).title("Demo Marker: Cal Poly"));
+        Entrance cpCenter = new Entrance(calPoly, null, false, null);
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(calPoly, 15);
         mMap.moveCamera(update);
         mMap.setBuildingsEnabled(true);

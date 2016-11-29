@@ -4,6 +4,10 @@
 
     <string-array name="building_names">
         <item>Cal Poly Center</item>
+        <item>1)Administration</item>
+        <item>2)Cotchett Education</item>
+        <item>14)Frank E. Pilling</item>
+        <item>15)Cal Poly Corporation Admin</item>
         <item>20)Engineering East</item>
         <item>35)Kennedy Library</item>
     </string-array>
