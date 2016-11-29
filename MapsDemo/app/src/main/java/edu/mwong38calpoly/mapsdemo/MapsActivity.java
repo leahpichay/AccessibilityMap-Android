@@ -162,7 +162,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             });
         }
-        mMap.t;
 
         // Add a marker in Cal Poly and move the camera
         LatLng calPoly = new LatLng(35.304925, -120.662048);
