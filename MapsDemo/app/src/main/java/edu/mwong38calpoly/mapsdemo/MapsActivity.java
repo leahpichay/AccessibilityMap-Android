@@ -27,6 +27,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private ArrayList<Marker> mapMarkers;
+    private MarkerOptions markerOptions;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -39,6 +40,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        markerOptions = new MarkerOptions();
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -59,13 +61,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         ArrayList<Entrance> eeEntrances = new ArrayList<Entrance>();
-        eeEntrances.add(new Entrance(new LatLng(35.300217,-120.661962), null));
-        eeEntrances.add(new Entrance(new LatLng(35.300890,-120.661810), null));
-        eeEntrances.add(new Entrance(new LatLng(35.300222,-120.661402), null));
+        eeEntrances.add(new Entrance(new LatLng(35.300217,-120.661962), null, false, null));
+        eeEntrances.add(new Entrance(new LatLng(35.300890,-120.661810), null, false, null));
+        eeEntrances.add(new Entrance(new LatLng(35.300222,-120.661402), null, false, null));
         final Building eeBuilding = new Building("Engineering East", new LatLng(35.300459, -120.661537), eeEntrances);
 
         //Kennedy Library!
         ArrayList<Entrance> klEntrances = new ArrayList<Entrance>();
+        klEntrances.add(new Entrance(new LatLng(35.3018246, -120.6636285), null, false, null));
+        final Building klBuilding = new Building("Kennedy Library", new LatLng(35.301775, -120.663809), klEntrances);
 
         Spinner dropDown = (Spinner) findViewById(R.id.dropDown);
         dropDown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -78,6 +82,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     removeMarkers();
                     moveToBuilding(mMap, eeBuilding);
                     addBuildingEntrances(mMap, eeBuilding);
+                }
+                else if(parent.getSelectedItemPosition() == 2) {
+                    removeMarkers();
+                    moveToBuilding(mMap, klBuilding);
+                    addBuildingEntrances(mMap,klBuilding);
                 }
             }
 
@@ -97,7 +106,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void addBuildingEntrances(GoogleMap mMap, Building building) {
         for (Entrance entrance : building.entrances) {
-            addMarker(mMap, new MarkerOptions().position(entrance.location));
+            addMarker(mMap, markerOptions.position(entrance.location));
         }
     }
 
@@ -153,9 +162,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             });
         }
+        mMap.t;
+
         // Add a marker in Cal Poly and move the camera
         LatLng calPoly = new LatLng(35.304925, -120.662048);
-        addMarker(mMap, new MarkerOptions().position(calPoly).title("Demo Marker: Cal Poly"));
+        addMarker(mMap, markerOptions.position(calPoly).title("Demo Marker: Cal Poly"));
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(calPoly, 15);
         mMap.moveCamera(update);
         mMap.setBuildingsEnabled(true);
