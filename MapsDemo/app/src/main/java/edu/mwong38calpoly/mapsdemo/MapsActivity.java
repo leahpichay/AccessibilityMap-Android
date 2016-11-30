@@ -175,7 +175,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * installed Google Play services and returned to the app.
      */
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(final GoogleMap googleMap) {
         mMap = googleMap;
         if(mMap != null) {
             mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
@@ -183,15 +183,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 public View getInfoWindow(Marker marker) {
                     return null;
                 }
-
                 @Override
                 public View getInfoContents(Marker marker) {
                     View v = getLayoutInflater().inflate(R.layout.marker_info, null);
-                    TextView markerTitle = (TextView)findViewById(R.id.markerTitle);
-                    markerTitle.setText(marker.getTitle());
-                    TextView markerText1 = (TextView)findViewById(R.id.markerText1);
-                    TextView markerText2 = (TextView)findViewById(R.id.markerText2);
-                    TextView markerText3 = (TextView)findViewById(R.id.markerText3);
+                    TextView markerTitle = (TextView)v.findViewById(R.id.markerTitle);
+                    if (markerTitle!=null && marker!=null) {
+                        markerTitle.setText(marker.getTitle());
+                    }
+                    TextView markerText1 = (TextView)v.findViewById(R.id.markerText1);
+                    TextView markerText2 = (TextView)v.findViewById(R.id.markerText2);
+                    TextView markerText3 = (TextView)v.findViewById(R.id.markerText3);
 
                     return v;
                 }
@@ -200,7 +201,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Add a marker in Cal Poly and move the camera
         LatLng calPoly = new LatLng(35.304925, -120.662048);
-        Entrance cpCenter = new Entrance(calPoly, null, false, null);
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(calPoly, 15);
         mMap.moveCamera(update);
         mMap.setBuildingsEnabled(true);
