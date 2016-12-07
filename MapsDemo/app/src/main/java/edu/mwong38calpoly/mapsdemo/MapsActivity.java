@@ -1,11 +1,24 @@
 package edu.mwong38calpoly.mapsdemo;
 
+import android.app.Dialog;
+import android.content.DialogInterface;
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.ColorDrawable;
 import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -20,10 +33,13 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.vr.sdk.widgets.pano.VrPanoramaView;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener {
 
     private GoogleMap mMap;
     private ArrayList<Marker> mapMarkers;
@@ -152,14 +168,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 @Override
                 public View getInfoContents(Marker marker) {
-                    View v = getLayoutInflater().inflate(R.layout.marker_info, null);
+
+                    View v = getLayoutInflater().inflate(R.layout.marker_info ,null);
                     TextView markerTitle = (TextView)findViewById(R.id.markerTitle);
                     TextView markerText1 = (TextView)findViewById(R.id.markerText1);
                     TextView markerText2 = (TextView)findViewById(R.id.markerText2);
                     TextView markerText3 = (TextView)findViewById(R.id.markerText3);
 
+                    /*ImageView image = (ImageView)v.findViewById(R.id.markerImage);
+
+                    image.setOnClickListener(new View.OnClickListener() {
+                        //@Override
+                        public void onClick(View v) {
+                            System.out.println("TESTING BITCH");
+                            Log.d("test", "test");
+                            showImage();
+                        }
+                    });*/
+
                     return v;
                 }
+
+
+
             });
         }
 
@@ -170,6 +201,41 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(update);
         mMap.setBuildingsEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(false);
+        mMap.setOnInfoWindowClickListener(this);
+    }
+
+    public void showImage() {
+        Dialog builder = new Dialog(this);
+        builder.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        builder.getWindow().setBackgroundDrawable(
+                new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                //nothing;
+            }
+        });
+        AssetManager assetManager = getAssets();
+        InputStream istr = null;
+        VrPanoramaView.Options panoOptions = null;
+
+        try {
+            istr = assetManager.open("room.jpg");
+            panoOptions = new VrPanoramaView.Options();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Bitmap bm = BitmapFactory.decodeStream(istr);
+
+        VrPanoramaView pv = new VrPanoramaView(this);
+        pv.loadImageFromBitmap(bm, panoOptions);
+
+        builder.addContentView(pv, new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        builder.show();
     }
 
     @Override
@@ -211,4 +277,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         AppIndex.AppIndexApi.end(client, viewAction);
         client.disconnect();
     }
+
+    @Override
+    public void onInfoWindowClick(Marker marker){
+        System.out.println("HIT ON INFO WINDOW CLICK");
+        showImage();
+    }
+
+
 }
