@@ -1,35 +1,42 @@
 package edu.mwong38calpoly.mapsdemo;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
 import android.location.Geocoder;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.AdapterView;
-import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -39,7 +46,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener,
+        GoogleApiClient.ConnectionCallbacks, LocationListener, GoogleApiClient.OnConnectionFailedListener {
 
     private GoogleMap mMap;
     private ArrayList<Marker> mapMarkers;
@@ -65,7 +73,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
-        if(mMap != null) {
+        if (mMap != null) {
             mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
 
                 @Override
@@ -76,33 +84,118 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             });
         }
 
-        ArrayList<Entrance> eeEntrances = new ArrayList<Entrance>();
-        eeEntrances.add(new Entrance(new LatLng(35.300217,-120.661962), null, false, null));
-        eeEntrances.add(new Entrance(new LatLng(35.300890,-120.661810), null, false, null));
-        eeEntrances.add(new Entrance(new LatLng(35.300222,-120.661402), null, false, null));
-        final Building eeBuilding = new Building("Engineering East", new LatLng(35.300459, -120.661537), eeEntrances);
-
-        //Kennedy Library!
-        ArrayList<Entrance> klEntrances = new ArrayList<Entrance>();
-        klEntrances.add(new Entrance(new LatLng(35.3018246, -120.6636285), null, false, null));
-        final Building klBuilding = new Building("Kennedy Library", new LatLng(35.301775, -120.663809), klEntrances);
-
         Spinner dropDown = (Spinner) findViewById(R.id.dropDown);
         dropDown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if(parent.getSelectedItemPosition() == 0) {
+                int p = parent.getSelectedItemPosition();
+                removeMarkers();
+                if (p == 0) {
                     resetMap(mMap);
-                }
-                else if(parent.getSelectedItemPosition() == 1) {
-                    removeMarkers();
-                    moveToBuilding(mMap, eeBuilding);
-                    addBuildingEntrances(mMap, eeBuilding);
-                }
-                else if(parent.getSelectedItemPosition() == 2) {
-                    removeMarkers();
-                    moveToBuilding(mMap, klBuilding);
-                    addBuildingEntrances(mMap,klBuilding);
+                } else if (p == 1) {
+                    Building b = BuildingFactory.getBuilding1();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 2) {
+                    Building b = BuildingFactory.getBuilding2();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 3) {
+                    Building b = BuildingFactory.getBuilding3();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 4) {
+                    Building b = BuildingFactory.getBuilding10();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 5) {
+                    Building b = BuildingFactory.getBuilding14();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 6) {
+                    Building b = BuildingFactory.getBuilding15();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 7) {
+                    Building b = BuildingFactory.getBuilding19();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 8) {
+                    Building b = BuildingFactory.getBuilding20();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 9) {
+                    Building b = BuildingFactory.getBuilding20A();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 10) {
+                    Building b = BuildingFactory.getBuilding22();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 11) {
+                    Building b = BuildingFactory.getBuilding24();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 12) {
+                    Building b = BuildingFactory.getBuilding25();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 13) {
+                    Building b = BuildingFactory.getBuilding26();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 14) {
+                    Building b = BuildingFactory.getBuilding27();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 15) {
+                    Building b = BuildingFactory.getBuilding33();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 16) {
+                    Building b = BuildingFactory.getBuilding34();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 17) {
+                    Building b = BuildingFactory.getBuilding35();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 18) {
+                    Building b = BuildingFactory.getBuilding38();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 19) {
+                    Building b = BuildingFactory.getBuilding40();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 20) {
+                    Building b = BuildingFactory.getBuilding43();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 21) {
+                    Building b = BuildingFactory.getBuilding52();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 22) {
+                    Building b = BuildingFactory.getBuilding53();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 23) {
+                    Building b = BuildingFactory.getBuilding65();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 24) {
+                    Building b = BuildingFactory.getBuilding124();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 25) {
+                    Building b = BuildingFactory.getBuilding180();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
+                } else if (p == 26) {
+                    Building b = BuildingFactory.getBuilding192();
+                    moveToBuilding(mMap, b);
+                    addBuildingEntrances(mMap, b);
                 }
             }
 
@@ -122,30 +215,46 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void addBuildingEntrances(GoogleMap mMap, Building building) {
         for (Entrance entrance : building.entrances) {
-            addMarker(mMap, markerOptions.position(entrance.location));
+            addMarker(mMap, entrance);
         }
     }
 
     private void moveToBuilding(GoogleMap mMap, Building building) {
-        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(building.location, 17);
+        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(building.location, 18);
         mMap.moveCamera(update);
     }
 
-    private void addMarker(GoogleMap mMap, MarkerOptions marker) {
-        if(mapMarkers == null)
+    private void addMarker(GoogleMap mMap, Entrance entrance) {
+        if (mapMarkers == null)
             mapMarkers = new ArrayList<Marker>();
 
-        Marker mark = mMap.addMarker(marker);
+        MarkerOptions mOptions = markerOptions.position(entrance.location);
+        Marker mark = mMap.addMarker(mOptions);
+        BitmapDescriptor icon;
+
+        if (entrance.isElevator) {
+            mark.setTitle("Elevator");
+            icon = BitmapDescriptorFactory.fromResource(R.mipmap.elevator);
+        } else {
+            mark.setTitle("Entrance");
+            icon = BitmapDescriptorFactory.fromResource(R.mipmap.blue_door);
+        }
+        mark.setIcon(icon);
         mapMarkers.add(mark);
     }
 
     private void removeMarkers() {
-        if(mapMarkers == null || mapMarkers.size()<1)
+        if (mapMarkers == null || mapMarkers.size() < 1)
             return;
-        for(Marker mark : mapMarkers) {
+        for (Marker mark : mapMarkers) {
             mark.remove();
         }
     }
+
+    private LocationRequest mLocationRequest;
+    private GoogleApiClient mGoogleApiClient;
+    private Marker currLocationMarker;
+    private LatLng latLng;
 
     /**
      * Manipulates the map once available.
@@ -159,7 +268,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        if(mMap != null) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
+        buildGoogleApiClient();
+        if (mMap != null) {
             mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                 @Override
                 public View getInfoWindow(Marker marker) {
@@ -169,11 +290,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 @Override
                 public View getInfoContents(Marker marker) {
 
-                    View v = getLayoutInflater().inflate(R.layout.marker_info ,null);
-                    TextView markerTitle = (TextView)findViewById(R.id.markerTitle);
-                    TextView markerText1 = (TextView)findViewById(R.id.markerText1);
-                    TextView markerText2 = (TextView)findViewById(R.id.markerText2);
-                    TextView markerText3 = (TextView)findViewById(R.id.markerText3);
+                    View v = getLayoutInflater().inflate(R.layout.marker_info, null);
+                    TextView markerTitle = (TextView) v.findViewById(R.id.markerTitle);
+                    markerTitle.setText(marker.getTitle());
+                    TextView markerText1 = (TextView) v.findViewById(R.id.markerText1);
+                    TextView markerText2 = (TextView) v.findViewById(R.id.markerText2);
+                    TextView markerText3 = (TextView) v.findViewById(R.id.markerText3);
 
                     /*ImageView image = (ImageView)v.findViewById(R.id.markerImage);
 
@@ -188,21 +310,66 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     return v;
                 }
-
-
-
             });
         }
 
         // Add a marker in Cal Poly and move the camera
         LatLng calPoly = new LatLng(35.304925, -120.662048);
-        addMarker(mMap, markerOptions.position(calPoly).title("Demo Marker: Cal Poly"));
+        Entrance cpCenter = new Entrance(calPoly, null, false, null);
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(calPoly, 15);
         mMap.moveCamera(update);
         mMap.setBuildingsEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(false);
         mMap.setOnInfoWindowClickListener(this);
+        mGoogleApiClient.connect();
     }
+
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        if (mLastLocation != null) {
+            //place marker at current position
+            //mGoogleMap.clear();
+            latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+            MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(latLng);
+            markerOptions.title("Current Position");
+            markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
+            currLocationMarker = mMap.addMarker(markerOptions);
+        }
+
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(5000); //5 seconds
+        mLocationRequest.setFastestInterval(3000); //3 seconds
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        //mLocationRequest.setSmallestDisplacement(0.1F); //1/10 meter
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
 
     public void showImage() {
         Dialog builder = new Dialog(this);
@@ -285,4 +452,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
+    @Override
+    public void onLocationChanged(Location location) {
+        if (currLocationMarker != null) {
+            currLocationMarker.remove();
+        }
+        latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(latLng);
+        markerOptions.title("Current Position");
+        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
+        currLocationMarker = mMap.addMarker(markerOptions);
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
 }

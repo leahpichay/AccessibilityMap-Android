@@ -27,12 +27,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Has Elevators"
-            android:id="@+id/elevatorCheck" />
+            android:id="@+id/elevatorCheck"
+            android:visibility="gone"/>
         <CheckBox
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Non-Powered Wheelchair"
-            android:id="@+id/powerWheelCheck" />
+            android:id="@+id/powerWheelCheck"
+            android:visibility="gone"/>
     </LinearLayout>
 
 
