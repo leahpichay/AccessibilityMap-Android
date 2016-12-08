@@ -5,9 +5,12 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
@@ -15,6 +18,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -42,8 +46,11 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.vr.sdk.widgets.pano.VrPanoramaView;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener,
@@ -52,6 +59,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private ArrayList<Marker> mapMarkers;
     private MarkerOptions markerOptions;
+    private Building currentBuilding;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -217,6 +225,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         for (Entrance entrance : building.entrances) {
             addMarker(mMap, entrance);
         }
+        currentBuilding = building;
     }
 
     private void moveToBuilding(GoogleMap mMap, Building building) {
@@ -268,18 +277,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
+        //if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        //    // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
             //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        mMap.setMyLocationEnabled(true);
+
+        //}
+        //mMap.setMyLocationEnabled(true);
         buildGoogleApiClient();
+        System.out.print("MMAP: ");
+        if(mMap == null) System.out.println("IS NULL");
+        else System.out.println("IS NOT NULL");
         if (mMap != null) {
             mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                 @Override
@@ -289,24 +301,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 @Override
                 public View getInfoContents(Marker marker) {
-
+                    System.out.println("HIT GET INFO CONTENTS");
                     View v = getLayoutInflater().inflate(R.layout.marker_info, null);
                     TextView markerTitle = (TextView) v.findViewById(R.id.markerTitle);
                     markerTitle.setText(marker.getTitle());
                     TextView markerText1 = (TextView) v.findViewById(R.id.markerText1);
                     TextView markerText2 = (TextView) v.findViewById(R.id.markerText2);
                     TextView markerText3 = (TextView) v.findViewById(R.id.markerText3);
-
-                    /*ImageView image = (ImageView)v.findViewById(R.id.markerImage);
-
-                    image.setOnClickListener(new View.OnClickListener() {
-                        //@Override
-                        public void onClick(View v) {
-                            System.out.println("TESTING BITCH");
-                            Log.d("test", "test");
-                            showImage();
-                        }
-                    });*/
 
                     return v;
                 }
@@ -320,8 +321,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(update);
         mMap.setBuildingsEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(false);
-        mMap.setOnInfoWindowClickListener(this);
         mGoogleApiClient.connect();
+        mMap.setOnInfoWindowClickListener(this);
     }
 
     protected synchronized void buildGoogleApiClient() {
@@ -371,7 +372,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    public void showImage() {
+    public void showImage(String imagePath) throws InterruptedException {
+        if(imagePath == null){
+            System.out.println("No image!");
+            return;
+        }
+        System.out.println("OPENING IMAGE: " + imagePath);
+
+        AssetManager assetManager = getAssets();
+        InputStream istr = null;
+        Bitmap bm = null;
+        try {
+            for (String s : assetManager.list(""))
+            System.out.println(s);
+            istr = assetManager.open(imagePath);
+
+            BitmapFactory.Options options=new BitmapFactory.Options();
+            options.inSampleSize = 8; //Stupid OOM
+            bm=BitmapFactory.decodeStream(istr,null,options);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //ImageDownloader t = new ImageDownloader("http://www.calpoly.edu/~bokumura/580/" + imagePath);
+        //new Thread(t).start();
+
+        //while(t.getBitmap() == null){};
+        //bm = t.getBitmap();
+        if(bm != null)
+            show360Img(bm);
+
+    }
+
+
+
+
+
+    public void show360Img(Bitmap bm){
         Dialog builder = new Dialog(this);
         builder.requestWindowFeature(Window.FEATURE_NO_TITLE);
         builder.getWindow().setBackgroundDrawable(
@@ -382,20 +418,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 //nothing;
             }
         });
-        AssetManager assetManager = getAssets();
-        InputStream istr = null;
-        VrPanoramaView.Options panoOptions = null;
-
-        try {
-            istr = assetManager.open("room.jpg");
-            panoOptions = new VrPanoramaView.Options();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        Bitmap bm = BitmapFactory.decodeStream(istr);
-
+        VrPanoramaView.Options panoOptions = new VrPanoramaView.Options();
         VrPanoramaView pv = new VrPanoramaView(this);
         pv.loadImageFromBitmap(bm, panoOptions);
 
@@ -448,7 +471,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onInfoWindowClick(Marker marker){
         System.out.println("HIT ON INFO WINDOW CLICK");
-        showImage();
+        try {
+            for(Entrance e: currentBuilding.entrances){
+                if (e.location.equals(marker.getPosition())){
+                    showImage(e.imagePath);
+                }
+            }
+            //showImage();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -468,5 +500,54 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
+    }
+
+    public class ImageDownloader implements Runnable {
+        private volatile Bitmap bm = null;
+        private String url;
+
+        public ImageDownloader(String url){
+            this.url = url;
+        }
+        @Override
+        public void run() {
+            bm = downloadImage(url);
+        }
+
+        public Bitmap getBitmap() {
+            return bm;
+        }
+        /*Taken from github and modified*/
+        private Bitmap downloadImage(String _url) {
+            URL url;
+            BufferedOutputStream out;
+            InputStream in;
+            BufferedInputStream buf;
+
+            try {
+                url = new URL(_url);
+                in = url.openStream();
+                // Read the inputstream
+                buf = new BufferedInputStream(in);
+
+                // Convert the BufferedInputStream to a Bitmap\
+                BitmapFactory.Options options=new BitmapFactory.Options();
+                options.inSampleSize = 8; //Stupid OOM
+                Bitmap bMap = BitmapFactory.decodeStream(buf,null,options);
+                if (in != null) {
+                    in.close();
+                }
+                if (buf != null) {
+                    buf.close();
+                }
+
+                return bMap;
+
+            } catch (Exception e) {
+                Log.e("Error reading file", e.toString());
+            }
+
+            return null;
+        }
     }
 }

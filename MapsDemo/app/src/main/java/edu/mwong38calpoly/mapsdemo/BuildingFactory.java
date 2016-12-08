@@ -16,8 +16,8 @@ public class BuildingFactory {
 
     public static Building getBuilding1(){
         ArrayList<Entrance> entrances = new ArrayList<Entrance>();
-        entrances.add(new Entrance(new LatLng(35.30117, -120.65829), null, false, null));
-        entrances.add(new Entrance(new LatLng(35.30081, -120.658708), null, false, null));
+        entrances.add(new Entrance(new LatLng(35.30117, -120.65829), "1.1.jpg", false, null));
+        entrances.add(new Entrance(new LatLng(35.30081, -120.658708), "1.2.jpg", false, null));
         entrances.add(new Entrance(new LatLng(35.301177, -120.65836), null, true, null));
         Building building = new Building("Administration", new LatLng(35.301051, -120.658601), entrances);
 
@@ -64,11 +64,11 @@ public class BuildingFactory {
 
     public static Building getBuilding14(){
         ArrayList<Entrance> entrances = new ArrayList<Entrance>();
-        entrances.add(new Entrance(new LatLng(35.300358, -120.662165), null, false, null));
-        entrances.add(new Entrance(new LatLng(35.299822, -120.662343), null, false, null));
-        entrances.add(new Entrance(new LatLng(35.299925, -120.661797), null, false, null));
-        entrances.add(new Entrance(new LatLng(35.300521, -120.662234), null, false, null));
-        entrances.add(new Entrance(new LatLng(35.300501, -120.662217), null, true, null));
+        entrances.add(new Entrance(new LatLng(35.300358, -120.662165), "14.1.jpg", false, null));
+        entrances.add(new Entrance(new LatLng(35.299822, -120.662343), "14.2.jpg", false, null));
+        entrances.add(new Entrance(new LatLng(35.299925, -120.661797), "14.3.jpg", false, null));
+        entrances.add(new Entrance(new LatLng(35.300521, -120.662234), "14.7.jpg", false, null));
+        entrances.add(new Entrance(new LatLng(35.300501, -120.662217), "14.4.jpg", true, null));
         //ramp entrances.add(new Entrance(new LatLng(35.300144, -120.662493), null, false, null));
         //ramp entrances.add(new Entrance(new LatLng(35.299887, -120.661709), null, false, null));
         Building building = new Building("Frank E. Pilling", new LatLng(35.300157, -120.662231), entrances);

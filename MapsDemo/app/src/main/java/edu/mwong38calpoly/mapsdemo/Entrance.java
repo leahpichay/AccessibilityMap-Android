@@ -12,11 +12,12 @@ public class Entrance {
     public LatLng location;
     public boolean isElevator;
     public ArrayList<String> tags;
-    public NativeAd.Image image; //just a placeholder, no idea what future images will be like or how to display
+    //public NativeAd.Image image; //just a placeholder, no idea what future images will be like or how to display
+    public String imagePath;
 
-    public Entrance(LatLng location, NativeAd.Image image, boolean isElevator, ArrayList<String> tags) {
+    public Entrance(LatLng location, String imagePath, boolean isElevator, ArrayList<String> tags) {
         this.location = location;
-        this.image = image;
+        this.imagePath = imagePath;
         this.isElevator = isElevator;
         this.tags = tags;
     }
