@@ -5,12 +5,9 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
@@ -23,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -58,6 +56,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private ArrayList<Marker> mapMarkers;
+    private ArrayList<Marker> markersWithPicture;
     private MarkerOptions markerOptions;
     private Building currentBuilding;
     /**
@@ -236,6 +235,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void addMarker(GoogleMap mMap, Entrance entrance) {
         if (mapMarkers == null)
             mapMarkers = new ArrayList<Marker>();
+        if (markersWithPicture == null)
+            markersWithPicture = new ArrayList<Marker>();
 
         MarkerOptions mOptions = markerOptions.position(entrance.location);
         Marker mark = mMap.addMarker(mOptions);
@@ -248,6 +249,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mark.setTitle("Entrance");
             icon = BitmapDescriptorFactory.fromResource(R.mipmap.blue_door);
         }
+
+        if (entrance.imagePath != null) {
+            markersWithPicture.add(mark);
+        }
+
         mark.setIcon(icon);
         mapMarkers.add(mark);
     }
@@ -308,6 +314,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     TextView markerText1 = (TextView) v.findViewById(R.id.markerText1);
                     TextView markerText2 = (TextView) v.findViewById(R.id.markerText2);
                     TextView markerText3 = (TextView) v.findViewById(R.id.markerText3);
+
+                    if (markersWithPicture.contains(marker)) {
+                        ImageView markerImage = (ImageView) v.findViewById(R.id.markerImage);
+                        markerImage.setImageResource(R.mipmap.has_photo);
+                    }
 
                     return v;
                 }
