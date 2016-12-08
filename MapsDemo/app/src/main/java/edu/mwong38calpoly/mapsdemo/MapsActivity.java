@@ -11,10 +11,12 @@ import android.graphics.drawable.ColorDrawable;
 import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -283,18 +285,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        //if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-        //    // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-
-        //}
-        //mMap.setMyLocationEnabled(true);
-        buildGoogleApiClient();
+        //Initialize Google Play Services
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                buildGoogleApiClient();
+                mMap.setMyLocationEnabled(true);
+            }
+        }
+        else {
+            buildGoogleApiClient();
+            mMap.setMyLocationEnabled(true);
+        }
         System.out.print("MMAP: ");
         if(mMap == null) System.out.println("IS NULL");
         else System.out.println("IS NOT NULL");
@@ -332,7 +335,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(update);
         mMap.setBuildingsEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(false);
-        mGoogleApiClient.connect();
         mMap.setOnInfoWindowClickListener(this);
     }
 
@@ -346,6 +348,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onConnected(Bundle bundle) {
+        //Toast.makeText(this,"onConnected",Toast.LENGTH_SHORT).show();
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if (mLastLocation != null) {
             //place marker at current position
@@ -379,7 +382,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onConnectionSuspended(int i) {
-
+        //Toast.makeText(this,"onConnectionSuspended",Toast.LENGTH_SHORT).show();
     }
 
 
@@ -456,6 +459,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 // TODO: Make sure this auto-generated app URL is correct.
                 Uri.parse("android-app://edu.mwong38calpoly.mapsdemo/http/host/path")
         );
+        if (mGoogleApiClient!= null && !mGoogleApiClient.isConnected())
+            mGoogleApiClient.connect();
         AppIndex.AppIndexApi.start(client, viewAction);
     }
 
@@ -506,11 +511,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         markerOptions.title("Current Position");
         markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
         currLocationMarker = mMap.addMarker(markerOptions);
+
+        //Toast.makeText(this,"Location Changed",Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
+        //Toast.makeText(this,"onConnectionFailed", Toast.LENGTH_SHORT).show();
     }
 
     public class ImageDownloader implements Runnable {
