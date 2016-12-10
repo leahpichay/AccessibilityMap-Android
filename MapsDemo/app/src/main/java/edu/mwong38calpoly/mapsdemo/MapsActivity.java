@@ -8,6 +8,7 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -44,6 +45,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.vr.sdk.widgets.pano.VrPanoramaView;
 
 import java.io.BufferedInputStream;
@@ -53,6 +56,10 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 
+/**
+ * TODO: All 360 image stuff should be moved to its own class.
+ *
+ */
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener,
         GoogleApiClient.ConnectionCallbacks, LocationListener, GoogleApiClient.OnConnectionFailedListener {
 
@@ -67,7 +74,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleApiClient client;
 
     private ArrayList<Building> buildings = new ArrayList<Building>();
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -214,13 +220,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+    /**
+     * Resets the map by clearing all markers and zooms out
+     * @param mMap
+     */
     private void resetMap(GoogleMap mMap) {
         removeMarkers();
         LatLng calPoly = new LatLng(35.304925, -120.662048);
+
+        /*Testing polylines to draw directions.  good luck with this...*/
+        /*
+        Polyline line = mMap.addPolyline(new PolylineOptions()
+                .add(new LatLng(35.30117, -120.65829), new LatLng(35.300358, -120.662165))
+                .width(5)
+                .color(Color.RED));*/
+
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(calPoly, 15);
         mMap.moveCamera(update);
     }
 
+    /**
+     * Adds a building to the map.
+     * @param mMap
+     * @param building
+     */
     private void addBuildingEntrances(GoogleMap mMap, Building building) {
         for (Entrance entrance : building.entrances) {
             addMarker(mMap, entrance);
@@ -228,11 +251,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         currentBuilding = building;
     }
 
+    /**
+     * Moves the map to a building
+     * @param mMap
+     * @param building
+     */
     private void moveToBuilding(GoogleMap mMap, Building building) {
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(building.location, 18);
         mMap.moveCamera(update);
     }
 
+    /**
+     * Adds a marker to the map.
+     * @param mMap
+     * @param entrance
+     */
     private void addMarker(GoogleMap mMap, Entrance entrance) {
         if (mapMarkers == null)
             mapMarkers = new ArrayList<Marker>();
@@ -252,6 +285,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapMarkers.add(mark);
     }
 
+    /**
+     * Removes makers from the map
+     */
     private void removeMarkers() {
         if (mapMarkers == null || mapMarkers.size() < 1)
             return;
@@ -289,9 +325,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //}
         //mMap.setMyLocationEnabled(true);
         buildGoogleApiClient();
-        System.out.print("MMAP: ");
-        if(mMap == null) System.out.println("IS NULL");
-        else System.out.println("IS NOT NULL");
         if (mMap != null) {
             mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                 @Override
@@ -302,6 +335,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 @Override
                 public View getInfoContents(Marker marker) {
                     System.out.println("HIT GET INFO CONTENTS");
+                    Path p = new Path(null,null,0);
+
+                    p.main(mMap); //For testing the a* algorithm.
+
                     View v = getLayoutInflater().inflate(R.layout.marker_info, null);
                     TextView markerTitle = (TextView) v.findViewById(R.id.markerTitle);
                     markerTitle.setText(marker.getTitle());
@@ -371,7 +408,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-
+    /**
+     * Shows a 360 image.  This shoul really be its own class, but we were hacking this together.
+     * @param imagePath: right now, its just the image name.
+     * @throws InterruptedException
+     * TODO: Scale these huge bitmaps down, and have an option to only download them through da wifis.
+     */
     public void showImage(String imagePath) throws InterruptedException {
         if(imagePath == null){
             System.out.println("No image!");
@@ -388,25 +430,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             istr = assetManager.open(imagePath);
 
             BitmapFactory.Options options=new BitmapFactory.Options();
-            options.inSampleSize = 8; //Stupid OOM
+            options.inSampleSize = 8; //Stupid OOM.  good luck with these huge a** bitmaps.
             bm=BitmapFactory.decodeStream(istr,null,options);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        /*If you wanted to download the URLs.  I have one image hosted on this website.
+        * (1.1 I think... then I ran out of disk space xD)
+        * */
         //ImageDownloader t = new ImageDownloader("http://www.calpoly.edu/~bokumura/580/" + imagePath);
         //new Thread(t).start();
 
         //while(t.getBitmap() == null){};
         //bm = t.getBitmap();
+
         if(bm != null)
             show360Img(bm);
-
     }
 
-
-
-
-
+    /**
+     * Displays a 360 image given a bitmap.
+     * Again, this should be put in a diff class LOL.
+     * @param bm bitmap to render
+     */
     public void show360Img(Bitmap bm){
         Dialog builder = new Dialog(this);
         builder.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -468,6 +515,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         client.disconnect();
     }
 
+    /**
+     * Function is ran if a infowindow is clicked.  right now, it will show a 360 image if available.
+     * @param marker
+     */
     @Override
     public void onInfoWindowClick(Marker marker){
         System.out.println("HIT ON INFO WINDOW CLICK");
@@ -477,7 +528,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     showImage(e.imagePath);
                 }
             }
-            //showImage();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -499,9 +549,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
+        //hmmm....
     }
 
+
+
+
+
+
+
+    /**
+     * Running an Async task to download images in another thread.  Android complians if its on
+     * the main thread :/
+     */
     public class ImageDownloader implements Runnable {
         private volatile Bitmap bm = null;
         private String url;
@@ -517,6 +577,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         public Bitmap getBitmap() {
             return bm;
         }
+
         /*Taken from github and modified*/
         private Bitmap downloadImage(String _url) {
             URL url;
@@ -532,7 +593,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 // Convert the BufferedInputStream to a Bitmap\
                 BitmapFactory.Options options=new BitmapFactory.Options();
-                options.inSampleSize = 8; //Stupid OOM
+                options.inSampleSize = 8; //Stupid OOM D:
                 Bitmap bMap = BitmapFactory.decodeStream(buf,null,options);
                 if (in != null) {
                     in.close();
@@ -546,7 +607,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             } catch (Exception e) {
                 Log.e("Error reading file", e.toString());
             }
-
             return null;
         }
     }

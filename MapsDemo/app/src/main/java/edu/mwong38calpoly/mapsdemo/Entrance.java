@@ -13,7 +13,7 @@ public class Entrance {
     public boolean isElevator;
     public ArrayList<String> tags;
     //public NativeAd.Image image; //just a placeholder, no idea what future images will be like or how to display
-    public String imagePath;
+    public String imagePath; //path or url of the 360 Image
 
     public Entrance(LatLng location, String imagePath, boolean isElevator, ArrayList<String> tags) {
         this.location = location;
