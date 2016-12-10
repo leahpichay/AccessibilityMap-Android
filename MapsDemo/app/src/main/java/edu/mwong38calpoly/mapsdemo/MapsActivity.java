@@ -65,6 +65,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private ArrayList<Marker> mapMarkers;
+    private ArrayList<Marker> markersWithPicture;
     private MarkerOptions markerOptions;
     private Building currentBuilding;
     /**
@@ -74,6 +75,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleApiClient client;
 
     private ArrayList<Building> buildings = new ArrayList<Building>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -220,10 +222,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    /**
-     * Resets the map by clearing all markers and zooms out
-     * @param mMap
-     */
     private void resetMap(GoogleMap mMap) {
         removeMarkers();
         LatLng calPoly = new LatLng(35.304925, -120.662048);
@@ -269,6 +267,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void addMarker(GoogleMap mMap, Entrance entrance) {
         if (mapMarkers == null)
             mapMarkers = new ArrayList<Marker>();
+        if (markersWithPicture == null)
+            markersWithPicture = new ArrayList<Marker>();
 
         MarkerOptions mOptions = markerOptions.position(entrance.location);
         Marker mark = mMap.addMarker(mOptions);
@@ -281,13 +281,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mark.setTitle("Entrance");
             icon = BitmapDescriptorFactory.fromResource(R.mipmap.blue_door);
         }
+
+        if (entrance.imagePath != null) {
+            markersWithPicture.add(mark);
+        }
+
         mark.setIcon(icon);
         mapMarkers.add(mark);
     }
 
-    /**
-     * Removes makers from the map
-     */
     private void removeMarkers() {
         if (mapMarkers == null || mapMarkers.size() < 1)
             return;
@@ -313,18 +315,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        //if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-        //    // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-
-        //}
-        //mMap.setMyLocationEnabled(true);
-        buildGoogleApiClient();
+        //Initialize Google Play Services
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                buildGoogleApiClient();
+                mMap.setMyLocationEnabled(true);
+            }
+        }
+        else {
+            buildGoogleApiClient();
+            mMap.setMyLocationEnabled(true);
+        }
+        System.out.print("MMAP: ");
+        if(mMap == null) System.out.println("IS NULL");
+        else System.out.println("IS NOT NULL");
         if (mMap != null) {
             mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                 @Override
@@ -346,6 +352,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     TextView markerText2 = (TextView) v.findViewById(R.id.markerText2);
                     TextView markerText3 = (TextView) v.findViewById(R.id.markerText3);
 
+                    if (markersWithPicture.contains(marker)) {
+                        ImageView markerImage = (ImageView) v.findViewById(R.id.markerImage);
+                        markerImage.setImageResource(R.mipmap.has_photo);
+                    }
+
                     return v;
                 }
             });
@@ -358,7 +369,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(update);
         mMap.setBuildingsEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(false);
-        mGoogleApiClient.connect();
         mMap.setOnInfoWindowClickListener(this);
     }
 
@@ -372,6 +382,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onConnected(Bundle bundle) {
+        //Toast.makeText(this,"onConnected",Toast.LENGTH_SHORT).show();
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if (mLastLocation != null) {
             //place marker at current position
@@ -405,7 +416,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onConnectionSuspended(int i) {
-
+        //Toast.makeText(this,"onConnectionSuspended",Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -492,6 +503,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 // TODO: Make sure this auto-generated app URL is correct.
                 Uri.parse("android-app://edu.mwong38calpoly.mapsdemo/http/host/path")
         );
+        if (mGoogleApiClient!= null && !mGoogleApiClient.isConnected())
+            mGoogleApiClient.connect();
         AppIndex.AppIndexApi.start(client, viewAction);
     }
 
@@ -528,6 +541,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     showImage(e.imagePath);
                 }
             }
+            //showImage();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -545,11 +559,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         markerOptions.title("Current Position");
         markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
         currLocationMarker = mMap.addMarker(markerOptions);
+
+        //Toast.makeText(this,"Location Changed",Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         //hmmm....
+        //Toast.makeText(this,"onConnectionFailed", Toast.LENGTH_SHORT).show();
     }
 
 
@@ -577,7 +594,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         public Bitmap getBitmap() {
             return bm;
         }
-
         /*Taken from github and modified*/
         private Bitmap downloadImage(String _url) {
             URL url;
@@ -593,7 +609,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 // Convert the BufferedInputStream to a Bitmap\
                 BitmapFactory.Options options=new BitmapFactory.Options();
-                options.inSampleSize = 8; //Stupid OOM D:
+                options.inSampleSize = 8; //Stupid OOM
                 Bitmap bMap = BitmapFactory.decodeStream(buf,null,options);
                 if (in != null) {
                     in.close();
@@ -607,6 +623,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             } catch (Exception e) {
                 Log.e("Error reading file", e.toString());
             }
+
             return null;
         }
     }
