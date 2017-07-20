@@ -1,1 +1,0 @@
-include ':app', ':panowidget', ':common', ':commonwidget'
