@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:clickable="false">
+
+    <ImageView
+        android:id="@+id/markerImage"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@mipmap/no_photo_2"
+        android:clickable="true" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <TextView android:id = "@+id/markerTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Building Entrance"
+            android:textSize="22sp"/>
+
+        <TextView android:id = "@+id/markerText1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Wheelchair Accessible"
+            android:visibility="invisible"/>
+        <TextView android:id = "@+id/markerText2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Has Ramp"
+            android:visibility="invisible"/>
+        <TextView android:id = "@+id/markerText3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Uses Automatic Door(s)"
+            android:visibility="invisible"/>
+
+    </LinearLayout>
+</LinearLayout>

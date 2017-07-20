@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">MapsDemo</string>
+    <string name="title_activity_maps">Map</string>
+
+    <string-array name="building_names">
+        <item>Cal Poly Center</item>
+        <item>1)Administration</item>
+        <item>2)Crotchett Education Building</item>
+        <item>3)Business Building</item>
+        <item>10)Alan A. Ernhart Agriculture</item>
+        <item>14)Frank E. Pilling Building</item>
+        <item>15)Cal Poly Corporation Admin</item>
+        <item>19)Dining Complex</item>
+        <item>20)Engineering East</item>
+        <item>20A)Engineering East Faculty</item>
+        <item>22)English Building</item>
+        <item>24)Food Processing</item>
+        <item>25)Faculty Offices East</item>
+        <item>26)Graphic Arts</item>
+        <item>27)Health Center</item>
+        <item>33)Clyde P. Fisher Science</item>
+        <item>34)Walkter F. Dexter Building</item>
+        <item>35)Robert E. Kennedy Library</item>
+        <item>38)Mathematics and Science</item>
+        <item>40)Engineering South</item>
+        <item>43)Recreation Center</item>
+        <item>52)Science Building</item>
+        <item>53)Science North</item>
+        <item>65)University Union</item>
+        <item>124)Student Services</item>
+        <item>180)Baker Science and Mathematics</item>
+        <item>192)Engineering IV</item>
+    </string-array>
+
+</resources>
