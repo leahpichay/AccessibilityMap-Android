@@ -1,22 +1,47 @@
-<LinearLayout android:layout_height="fill_parent"
-    xmlns:android="http://schemas.android.com/apk/res/android"  android:layout_width="fill_parent"
-    android:orientation="vertical">
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="edu.mwong38calpoly.mapsdemo.MapsActivity">
+
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:context="edu.mwong38calpoly.mapsdemo.MapsActivity" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <TextView android:text="Select Building:"
+        android:orientation="horizontal"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp">
+        <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="20dp"
-            android:paddingLeft="5dp"/>
-        <Spinner
+            android:background="@drawable/bg_titlebar">
+            <TextView android:text="Select Destination:"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="@android:color/white"/>
+        </RelativeLayout>
+        <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/dropDown"
-            android:entries="@array/building_names">
-        </Spinner>
+            android:background="@drawable/bg_spinner">
+            <Spinner
+                style="@style/Widget.AppCompat.DropDownItem.Spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/dropDown"
+                android:entries="@array/building_names" />
+        </RelativeLayout>
     </LinearLayout>
 
     <LinearLayout
@@ -37,13 +62,15 @@
             android:visibility="gone"/>
     </LinearLayout>
 
+    <android.support.design.widget.FloatingActionButton
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/button_padding"
+        android:src="@android:drawable/ic_menu_directions"
+        android:tint="@android:color/white"
+        app:backgroundTint="#1e4d2b"/>
 
-    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:map="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-    tools:context="edu.mwong38calpoly.mapsdemo.MapsActivity" />
-</LinearLayout>
+</android.support.design.widget.CoordinatorLayout>

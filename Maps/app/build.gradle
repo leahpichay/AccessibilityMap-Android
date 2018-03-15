@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         applicationId "edu.mwong38calpoly.mapsdemo"
@@ -28,4 +28,5 @@ dependencies {
     compile project(':commonwidget')
     compile project(':panowidget')
     compile 'com.google.maps.android:android-maps-utils:0.4+'
+    compile 'com.android.support:design:23.3.0'
 }

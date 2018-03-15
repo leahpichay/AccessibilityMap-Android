@@ -5,20 +5,20 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.ContextCompat;
+import android.support.design.widget.FloatingActionButton;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +27,7 @@ import android.widget.AdapterView;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.ImageView;
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
@@ -43,38 +44,51 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.vr.sdk.widgets.pano.VrPanoramaView;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.List;
 import java.util.ArrayList;
 
 /**
  * TODO: All 360 image stuff should be moved to its own class.
- *
  */
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener,
         GoogleApiClient.ConnectionCallbacks, LocationListener, GoogleApiClient.OnConnectionFailedListener {
+
+    private LatLng origin = new LatLng(35.300240, -120.664044);
+    private LatLng destination;
+
+    private Building currentBuilding;
+    private Polyline currentPath;
+    private Marker currentOrigin;
+    private Marker currentDest;
 
     private GoogleMap mMap;
     private ArrayList<Marker> mapMarkers;
     private ArrayList<Marker> markersWithPicture;
     private MarkerOptions markerOptions;
-    private Building currentBuilding;
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
     private GoogleApiClient client;
-
-    private ArrayList<Building> buildings = new ArrayList<Building>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -220,28 +234,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             }
         });
+
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                adjustToPath();
+            }
+        });
     }
 
     private void resetMap(GoogleMap mMap) {
         removeMarkers();
         LatLng calPoly = new LatLng(35.304925, -120.662048);
-
-        /*Testing polylines to draw directions.  good luck with this...*/
-        /*
-        Polyline line = mMap.addPolyline(new PolylineOptions()
-                .add(new LatLng(35.30117, -120.65829), new LatLng(35.300358, -120.662165))
-                .width(5)
-                .color(Color.RED));*/
-
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(calPoly, 15);
         mMap.moveCamera(update);
     }
 
-    /**
-     * Adds a building to the map.
-     * @param mMap
-     * @param building
-     */
     private void addBuildingEntrances(GoogleMap mMap, Building building) {
         for (Entrance entrance : building.entrances) {
             addMarker(mMap, entrance);
@@ -249,21 +258,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         currentBuilding = building;
     }
 
-    /**
-     * Moves the map to a building
-     * @param mMap
-     * @param building
-     */
     private void moveToBuilding(GoogleMap mMap, Building building) {
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(building.location, 18);
         mMap.moveCamera(update);
     }
 
-    /**
-     * Adds a marker to the map.
-     * @param mMap
-     * @param entrance
-     */
     private void addMarker(GoogleMap mMap, Entrance entrance) {
         if (mapMarkers == null)
             mapMarkers = new ArrayList<Marker>();
@@ -298,6 +297,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    private void adjustToPath() {
+        boolean hasPoints = false;
+        Double maxLat = null, minLat = null, minLon = null, maxLon = null;
+
+        if (currentPath != null && currentPath.getPoints() != null) {
+            List<LatLng> pts = currentPath.getPoints();
+            for (LatLng coordinate : pts) {
+                // Find out the maximum and minimum latitudes & longitudes
+                // Latitude
+                maxLat = maxLat != null ? Math.max(coordinate.latitude, maxLat) : coordinate.latitude;
+                minLat = minLat != null ? Math.min(coordinate.latitude, minLat) : coordinate.latitude;
+
+                // Longitude
+                maxLon = maxLon != null ? Math.max(coordinate.longitude, maxLon) : coordinate.longitude;
+                minLon = minLon != null ? Math.min(coordinate.longitude, minLon) : coordinate.longitude;
+
+                hasPoints = true;
+            }
+        }
+
+        if (hasPoints) {
+            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+            builder.include(new LatLng(maxLat, maxLon));
+            builder.include(new LatLng(minLat, minLon));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 48));
+        }
+    }
+
     private LocationRequest mLocationRequest;
     private GoogleApiClient mGoogleApiClient;
     private Marker currLocationMarker;
@@ -316,7 +343,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         //Initialize Google Play Services
-        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             if (ContextCompat.checkSelfPermission(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
@@ -328,9 +355,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             buildGoogleApiClient();
             mMap.setMyLocationEnabled(true);
         }
-        System.out.print("MMAP: ");
-        if(mMap == null) System.out.println("IS NULL");
-        else System.out.println("IS NOT NULL");
         if (mMap != null) {
             mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                 @Override
@@ -340,17 +364,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 @Override
                 public View getInfoContents(Marker marker) {
-                    System.out.println("HIT GET INFO CONTENTS");
-                    Path p = new Path(null,null,0);
+                    if (currentOrigin != null) { currentOrigin.remove(); }
+                    if (currentDest != null) { currentDest.remove(); }
 
-                    p.main(mMap); //For testing the a* algorithm.
+                    currentOrigin = mMap.addMarker(new MarkerOptions()
+                            .position(origin)
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                    destination = marker.getPosition();
+                    currentDest = mMap.addMarker(new MarkerOptions().position(destination));
+                    Path p = new Path(origin,destination,0);
+
+                    if (currentPath != null) { currentPath.remove(); }
+
+                    // Getting URL to the Google Directions API
+                    FetchUrl FetchUrl = new FetchUrl();
+
+                    // Start downloading json data from Google Directions API
+                    FetchUrl.execute(p.getUrl());
 
                     View v = getLayoutInflater().inflate(R.layout.marker_info, null);
                     TextView markerTitle = (TextView) v.findViewById(R.id.markerTitle);
                     markerTitle.setText(marker.getTitle());
-                    TextView markerText1 = (TextView) v.findViewById(R.id.markerText1);
-                    TextView markerText2 = (TextView) v.findViewById(R.id.markerText2);
-                    TextView markerText3 = (TextView) v.findViewById(R.id.markerText3);
+
+                    if (marker.getTitle().equals("Elevator")) {
+                        TextView markerText1 = (TextView) v.findViewById(R.id.markerText1);
+                        markerText1.setVisibility(View.VISIBLE);
+                        TextView markerText2 = (TextView) v.findViewById(R.id.markerText2);
+                        markerText2.setVisibility(View.VISIBLE);
+                        TextView markerText3 = (TextView) v.findViewById(R.id.markerText3);
+                        markerText3.setVisibility(View.VISIBLE);
+                    }
 
                     if (markersWithPicture.contains(marker)) {
                         ImageView markerImage = (ImageView) v.findViewById(R.id.markerImage);
@@ -361,10 +404,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             });
         }
-
         // Add a marker in Cal Poly and move the camera
         LatLng calPoly = new LatLng(35.304925, -120.662048);
-        Entrance cpCenter = new Entrance(calPoly, null, false, null);
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(calPoly, 15);
         mMap.moveCamera(update);
         mMap.setBuildingsEnabled(true);
@@ -382,11 +423,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onConnected(Bundle bundle) {
-        //Toast.makeText(this,"onConnected",Toast.LENGTH_SHORT).show();
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if (mLastLocation != null) {
-            //place marker at current position
-            //mGoogleMap.clear();
             latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
             MarkerOptions markerOptions = new MarkerOptions();
             markerOptions.position(latLng);
@@ -421,43 +459,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     /**
      * Shows a 360 image.  This shoul really be its own class, but we were hacking this together.
-     * @param imagePath: right now, its just the image name.
+     * @param imagePath: Currently, it is just the image name.
      * @throws InterruptedException
      * TODO: Scale these huge bitmaps down, and have an option to only download them through da wifis.
      */
     public void showImage(String imagePath) throws InterruptedException {
         if(imagePath == null){
-            System.out.println("No image!");
+            //System.out.println("No image!");
             return;
         }
-        System.out.println("OPENING IMAGE: " + imagePath);
-
+        //System.out.println("OPENING IMAGE: " + imagePath);
         AssetManager assetManager = getAssets();
         InputStream istr = null;
         Bitmap bm = null;
+
         try {
-            for (String s : assetManager.list(""))
-            System.out.println(s);
+            //for (String s : assetManager.list(""))
+                //System.out.println(s);
+
             istr = assetManager.open(imagePath);
-
-            BitmapFactory.Options options=new BitmapFactory.Options();
-            options.inSampleSize = 8; //Stupid OOM.  good luck with these huge a** bitmaps.
-            bm=BitmapFactory.decodeStream(istr,null,options);
-        } catch (IOException e) {
-            e.printStackTrace();
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inSampleSize = 8; //Stupid OOM. Good luck with these huge a** bitmaps.
+            bm = BitmapFactory.decodeStream(istr,null,options);
         }
+        catch (IOException e) { e.printStackTrace(); }
 
-        /*If you wanted to download the URLs.  I have one image hosted on this website.
-        * (1.1 I think... then I ran out of disk space xD)
-        * */
+        /* If you wanted to download the URLs.
+         * I have one image hosted on this website.
+         * (1.1 I think... then I ran out of disk space xD)
+         */
         //ImageDownloader t = new ImageDownloader("http://www.calpoly.edu/~bokumura/580/" + imagePath);
         //new Thread(t).start();
 
         //while(t.getBitmap() == null){};
         //bm = t.getBitmap();
 
-        if(bm != null)
-            show360Img(bm);
+        if (bm != null) { show360Img(bm); }
     }
 
     /**
@@ -529,55 +566,41 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * Function is ran if a infowindow is clicked.  right now, it will show a 360 image if available.
+     * Runs if an InfoWindow is clicked.
+     * Shows a 360 image if available.
      * @param marker
      */
     @Override
-    public void onInfoWindowClick(Marker marker){
-        System.out.println("HIT ON INFO WINDOW CLICK");
+    public void onInfoWindowClick(Marker marker) {
         try {
-            for(Entrance e: currentBuilding.entrances){
-                if (e.location.equals(marker.getPosition())){
+            for (Entrance e: currentBuilding.entrances) {
+                if (e.location.equals(marker.getPosition())) {
                     showImage(e.imagePath);
                 }
             }
-            //showImage();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
+        catch (InterruptedException e) { e.printStackTrace(); }
     }
-
 
     @Override
     public void onLocationChanged(Location location) {
-        if (currLocationMarker != null) {
-            currLocationMarker.remove();
-        }
+        if (currLocationMarker != null) { currLocationMarker.remove(); }
         latLng = new LatLng(location.getLatitude(), location.getLongitude());
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(latLng);
         markerOptions.title("Current Position");
         markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
         currLocationMarker = mMap.addMarker(markerOptions);
-
-        //Toast.makeText(this,"Location Changed",Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        //hmmm....
         //Toast.makeText(this,"onConnectionFailed", Toast.LENGTH_SHORT).show();
     }
 
-
-
-
-
-
-
     /**
-     * Running an Async task to download images in another thread.  Android complians if its on
-     * the main thread :/
+     * Running an Async task to download images in another thread.
+     * Android complains if it is on the main thread :/
      */
     public class ImageDownloader implements Runnable {
         private volatile Bitmap bm = null;
@@ -594,7 +617,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         public Bitmap getBitmap() {
             return bm;
         }
-        /*Taken from github and modified*/
+        /* Taken from github and modified. */
         private Bitmap downloadImage(String _url) {
             URL url;
             BufferedOutputStream out;
@@ -604,27 +627,168 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             try {
                 url = new URL(_url);
                 in = url.openStream();
-                // Read the inputstream
+
+                // Read the InputStream
                 buf = new BufferedInputStream(in);
 
-                // Convert the BufferedInputStream to a Bitmap\
+                // Convert the BufferedInputStream to a Bitmap
                 BitmapFactory.Options options=new BitmapFactory.Options();
                 options.inSampleSize = 8; //Stupid OOM
                 Bitmap bMap = BitmapFactory.decodeStream(buf,null,options);
-                if (in != null) {
-                    in.close();
-                }
-                if (buf != null) {
-                    buf.close();
-                }
+                if (in != null) { in.close(); }
+                if (buf != null) { buf.close(); }
 
                 return bMap;
-
-            } catch (Exception e) {
-                Log.e("Error reading file", e.toString());
             }
+            catch (Exception e) { Log.e("Error reading file", e.toString()); }
 
             return null;
+        }
+    }
+
+    /**
+     * A method to download json data from url
+     */
+    private String downloadUrl(String strUrl) throws IOException {
+        String data = "";
+        InputStream iStream = null;
+        HttpURLConnection urlConnection = null;
+        try {
+            URL url = new URL(strUrl);
+
+            // Creating an http connection to communicate with url
+            urlConnection = (HttpURLConnection) url.openConnection();
+
+            // Connecting to url
+            urlConnection.connect();
+
+            // Reading data from url
+            iStream = urlConnection.getInputStream();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
+
+            StringBuffer sb = new StringBuffer();
+
+            String line = "";
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+
+            data = sb.toString();
+            Log.d("downloadUrl", data.toString());
+            br.close();
+
+        } catch (Exception e) {
+            Log.d("Exception", e.toString());
+        } finally {
+            iStream.close();
+            urlConnection.disconnect();
+        }
+        return data;
+    }
+
+    // Fetches data from url passed
+    private class FetchUrl extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... url) {
+
+            // For storing data from web service
+            String data = "";
+
+            try {
+                // Fetching the data from web service
+                data = downloadUrl(url[0]);
+                Log.d("Background Task data", data.toString());
+            } catch (Exception e) {
+                Log.d("Background Task", e.toString());
+            }
+            return data;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            ParserTask parserTask = new ParserTask();
+
+            // Invokes the thread for parsing the JSON data
+            parserTask.execute(result);
+
+        }
+    }
+
+    /**
+     * A class to parse the Google Places in JSON format
+     */
+    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
+
+        // Parsing the data in non-ui thread
+        @Override
+        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
+
+            JSONObject jObject;
+            List<List<HashMap<String, String>>> routes = null;
+
+            try {
+                jObject = new JSONObject(jsonData[0]);
+                Log.d("ParserTask",jsonData[0].toString());
+                DataParser parser = new DataParser();
+                Log.d("ParserTask", parser.toString());
+
+                // Starts parsing data
+                routes = parser.parse(jObject);
+                Log.d("ParserTask","Executing routes");
+                Log.d("ParserTask",routes.toString());
+
+            } catch (Exception e) {
+                Log.d("ParserTask",e.toString());
+                e.printStackTrace();
+            }
+            return routes;
+        }
+
+        // Executes in UI thread, after the parsing process
+        @Override
+        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
+            ArrayList<LatLng> points;
+            PolylineOptions lineOptions = null;
+
+            // Traversing through all the routes
+            for (int i = 0; i < result.size(); i++) {
+                points = new ArrayList<>();
+                lineOptions = new PolylineOptions();
+
+                // Fetching i-th route
+                List<HashMap<String, String>> path = result.get(i);
+
+                // Fetching all the points in i-th route
+                for (int j = 0; j < path.size(); j++) {
+                    HashMap<String, String> point = path.get(j);
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                // Adding all the points in the route to LineOptions
+                lineOptions.addAll(points);
+                lineOptions.width(10);
+                lineOptions.color(Color.BLUE);
+
+                Log.d("onPostExecute","onPostExecute lineoptions decoded");
+
+            }
+
+            // Drawing polyline in the Google Map for the i-th route
+            if(lineOptions != null) {
+                currentPath = mMap.addPolyline(lineOptions);
+            }
+            else {
+                Log.d("onPostExecute","without Polylines drawn");
+            }
         }
     }
 }
